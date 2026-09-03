@@ -19,23 +19,53 @@ echo "version=$version" >> "$GITHUB_OUTPUT"
 echo "Looking up $name@$version in GitHub Packages."
 
 set +e
-published=$(npm view "$name@$version" version --json 2>"$error_log")
+lookup=$(npm view "$name@$version" version --json 2>"$error_log")
 status=$?
 set -e
 
-if [ "$status" -eq 0 ] && [ -n "$published" ] && [ "$published" != "null" ]; then
-  # The registry answered, and the version is there.
-  echo "already published, skipping: $name@$version is already in the registry."
+fail_lookup() {
+  echo "The registry lookup for $name@$version did not answer whether the version exists:"
+  echo "$1"
+  exit 1
+}
+
+if [ "$status" -ne 0 ] && ! grep -qE 'E404|404 Not Found' "$error_log"; then
+  # Not an answer about the version — authentication, network, a server error.
+  fail_lookup "$(cat "$error_log")"
+fi
+
+# `npm view <name>@<version> version --json` prints a JSON string for a version
+# that exists, nothing at all for one that does not, and a JSON array when the
+# registry matches more than one. Anything else is not a version, and treating
+# it as one would silently skip a real release.
+set +e
+resolved=$(node -e '
+  const text = String(process.argv[1] ?? "").trim();
+  if (text === "") process.exit(0);
+  let value;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    process.exit(2);
+  }
+  if (value === null) process.exit(0);
+  const versions = (Array.isArray(value) ? value : [value]).filter(
+    (entry) => typeof entry === "string" && entry.trim() !== "",
+  );
+  if (versions.length === 0) process.exit(2);
+  process.stdout.write(versions[versions.length - 1]);
+' "$lookup")
+parse_status=$?
+set -e
+
+if [ "$parse_status" -ne 0 ]; then
+  fail_lookup "Unrecognised output from npm view: $lookup"
+fi
+
+if [ -n "$resolved" ]; then
+  echo "already published, skipping: $name@$resolved is already in the registry."
   echo "should-publish=false" >> "$GITHUB_OUTPUT"
-elif [ "$status" -eq 0 ] || grep -qE 'E404|404 Not Found' "$error_log"; then
-  # The registry answered, and the version is absent: either an empty result
-  # for a package that exists, or a 404 for one that does not.
+else
   echo "$name@$version is not in the registry; it will be published."
   echo "should-publish=true" >> "$GITHUB_OUTPUT"
-else
-  # Anything else is not an answer about the version, and must never be
-  # mistaken for a routine skip.
-  echo "The registry lookup for $name@$version failed for a reason other than the version being absent:"
-  cat "$error_log"
-  exit 1
 fi
