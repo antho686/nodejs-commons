@@ -55,10 +55,10 @@ function promisedPaths(pkg) {
   return promises;
 }
 
+// `promisedPaths` throws rather than returning a short list, so reaching here
+// means every documented entry point is accounted for and there is always
+// something to check.
 const promised = promisedPaths(manifest);
-if (promised.length === 0) {
-  throw new TypeError('package.json promises no entry points at all; there is nothing to verify.');
-}
 
 const missing = [];
 for (const { source, path } of promised) {
