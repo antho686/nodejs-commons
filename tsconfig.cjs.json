@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    /* Visit https://aka.ms/tsconfig to read more about this file */
+    /* Modules */
+    "module": "Node16" /* Specify what module code is generated. */,
+    "moduleResolution": "Node16" /* Specify how TypeScript looks up a file from a given module specifier. */,
+    /* Emit */
+    "declaration": false /* This build target does not emit declarations; tsconfig.types.json owns that. */,
+    "declarationMap": false,
+    /* JavaScript Support */
+    "outDir": "./dist/cjs" /* Specify an output folder for all emitted files. */,
+    "types": ["node", "jest"] /* Specify type package names to include without being referenced in a source file. */,
+    /* Interop Constraints */
+  },
+}
