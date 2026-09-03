@@ -6,8 +6,8 @@
     /* Modules */
     "resolveJsonModule": true /* Enable importing .json files. */,
     /* Emit */
-    "declaration": true /* Generate .d.ts files from TypeScript and JavaScript files in your project. */,
-    "declarationMap": true /* Create sourcemaps for d.ts files. */,
+    "declaration": false /* Generate .d.ts files from TypeScript and JavaScript files in your project. */,
+    "declarationMap": false /* Create sourcemaps for d.ts files. */,
     /* JavaScript Support */
     "allowJs": false /* Allow JavaScript files to be a part of your program. Use the 'checkJS' option to get errors from these files. */,
     "checkJs": false /* Enable error reporting in type-checked JavaScript files. */,
@@ -17,6 +17,8 @@
     "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
     /* Type Checking */
     "strict": true /* Enable all strict type-checking options. */,
+    "noImplicitAny": true /* Enable error reporting for expressions and declarations with an implied 'any' type. */,
+    "strictNullChecks": true /* When type checking, take into account 'null' and 'undefined'. */,
     /* Completeness */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },

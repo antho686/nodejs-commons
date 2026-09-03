@@ -1,6 +1,6 @@
 {
   "name": "@antho686/nodejs-commons",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Shared utility modules for Node.js scripts and applications",
   "keywords": [
     "utils",
