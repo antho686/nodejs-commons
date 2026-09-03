@@ -125,7 +125,7 @@ import { createDeterministicObjectHash, HexLength } from '@antho686/nodejs-commo
 const shortHash = createDeterministicObjectHash({ hexLength: HexLength.Hex12 });
 
 const key = shortHash({ documentId: 'doc_8f21a4', version: 3 });
-// => "e97db807d40c"
+// => "a1152ea01e2d"
 ```
 
 Options are validated **when the hasher is built**, not when it's used, so a bad `hexLength` throws at the call site that configured it rather than on some later hash:
