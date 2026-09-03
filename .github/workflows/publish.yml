@@ -1,0 +1,94 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+
+# The workflow itself can read. Every write is granted on the job below.
+permissions:
+  contents: read
+
+# Publish runs never overlap: the "a tag means this version is in the registry"
+# invariant depends on publish-then-tag completing, and `cancel-in-progress:
+# false` keeps a run that has started from being cancelled by a later push.
+#
+# It does not mean every push gets a run. GitHub queues at most one pending run
+# per group, so of several pushes arriving while a run is in flight, only the
+# latest survives to run — the versions in between are never published. See
+# docs/adr/0003-releases-are-human-versioned-and-published-only-when-new.md.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    # Declared here, at the point they are used: `packages` to publish,
+    # `contents` to push the tag.
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Check out the merged commit
+        uses: actions/checkout@v4
+
+      # `publishConfig.registry` is what `npm publish` obeys, so the workflow
+      # reads the registry and scope from the manifest rather than repeating
+      # them: one place to change, and no way for the two to disagree.
+      - name: Read the publish registry from the manifest
+        id: manifest
+        run: .github/scripts/read-publish-target.sh
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # The current Node LTS, pinned rather than tracked via `lts/*`, so a
+          # new LTS never changes what this workflow runs without a commit.
+          node-version: '24'
+          cache: npm
+          registry-url: ${{ steps.manifest.outputs.registry }}
+          scope: ${{ steps.manifest.outputs.scope }}
+
+      - name: Install dependencies from the lockfile
+        run: npm ci
+
+      # The merge result can differ from any pull request head that the gate in
+      # pull-request.yml already verified, so it is rebuilt and retested here.
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Verify the build produced the promised entry points
+        run: node .github/scripts/verify-entry-points.mjs
+
+      - name: Log the files that would be published
+        run: npm pack --dry-run
+
+      - name: Determine whether this version is already published
+        id: registry
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/resolve-publish-decision.sh
+
+      # GitHub Packages masks a package the token may not read as a 404, so the
+      # lookup above cannot tell "absent" from "unreadable" on its own. The
+      # registry settles it: publishing an existing version is refused with a
+      # conflict, which is the authoritative "already published". Any other
+      # failure is a real failure and fails the run.
+      - name: Publish to GitHub Packages
+        id: publish
+        if: steps.registry.outputs.should-publish == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/publish-to-registry.sh
+
+      # Only after a successful publish, so a tag always means "this version
+      # exists in the registry".
+      - name: Tag the published commit
+        if: steps.publish.outputs.published == 'true'
+        env:
+          VERSION: ${{ steps.registry.outputs.version }}
+        run: .github/scripts/tag-published-commit.sh
