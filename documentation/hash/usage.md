@@ -183,9 +183,9 @@ deterministicObjectHash({ a: 1, b: 2 }, { b: 2, a: 1 }); // throws TypeError
 
 This is deliberate: since the hash is often used as identity for stored data, a silent collapse of "two objects" into "actually the same object" would be a much harder bug to track down than an explicit error at the call site. If you legitimately want to hash the same object twice for some reason, that's a sign the objects should carry a distinguishing field instead.
 
-### A shorter hash is always a prefix of a longer one
+### Prefix-consistency: a shorter hash is always a prefix of a longer one
 
-For the same inputs, a hash of length _n_ is a strict prefix of any longer hash. This is a **guarantee**, not an implementation detail you happened to notice:
+**Prefix-consistency** is the property that, for the same inputs, a hash of length _n_ is a strict prefix of any longer hash. It is a **guarantee**, not an implementation detail you happened to notice:
 
 ```ts
 const input = { documentId: 'doc_8f21a4', version: 3 };
@@ -257,6 +257,6 @@ The output of both functions is treated as a locked contract, not an implementat
 Two things are covered by this guarantee:
 
 - What a given input hashes to at a given length.
-- That a shorter hash is a prefix of a longer one for the same input (see [above](#a-shorter-hash-is-always-a-prefix-of-a-longer-one)). This rules out ever mixing `hexLength` into the digest input to make lengths independent, since that would change what `HexLength.Default` produces today.
+- Prefix-consistency — that a shorter hash is a prefix of a longer one for the same input (see [above](#prefix-consistency-a-shorter-hash-is-always-a-prefix-of-a-longer-one)). This rules out ever mixing `hexLength` into the digest input to make lengths independent, since that would change what `HexLength.Default` produces today.
 
 Any change to either will only ship as a breaking major-version release, with migration guidance for re-keying data hashed under the previous scheme — never as a routine or patch-level change.
