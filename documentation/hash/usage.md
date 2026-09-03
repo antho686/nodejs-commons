@@ -237,6 +237,15 @@ This is the same "absent, `null`, and `undefined` are three distinct states" dis
 
 An empty object (`{}`) is valid input — it hashes to a fixed, consistent value like any other flat object.
 
+A hasher built by `createDeterministicObjectHash` applies exactly the same rules, and names **itself** in the message rather than `deterministicObjectHash`, so an error always points at a function you actually called:
+
+```ts
+const shortHash = createDeterministicObjectHash({ hexLength: HexLength.Hex12 });
+
+shortHash();
+// TypeError: createDeterministicObjectHash: at least one object is required
+```
+
 ### Rejected options
 
 `createDeterministicObjectHash` throws `TypeError` at configure time for:

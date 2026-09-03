@@ -94,6 +94,15 @@ describe('deterministicObjectHash', () => {
     expect(() => deterministicObjectHash(null as never)).toThrow(TypeError);
     expect(() => deterministicObjectHash(new Date() as never)).toThrow(TypeError);
   });
+
+  it('names itself, not the factory, in its errors', () => {
+    expect(() => deterministicObjectHash()).toThrow(/^deterministicObjectHash: /);
+    expect(() => deterministicObjectHash({ a: 1 }, { a: 1 })).toThrow(/^deterministicObjectHash: /);
+    expect(() => deterministicObjectHash({ a: NaN })).toThrow(/^deterministicObjectHash: /);
+    expect(() => deterministicObjectHash({ a: { b: 1 } } as never)).toThrow(
+      /^deterministicObjectHash: /,
+    );
+  });
 });
 
 describe('HexLength', () => {
@@ -160,6 +169,19 @@ describe('createDeterministicObjectHash', () => {
     expect(() => hash({ a: 1 }, { a: 1 })).toThrow(TypeError);
     expect(() => hash({ a: NaN })).toThrow(TypeError);
     expect(() => hash({ a: { b: 1 } } as never)).toThrow(TypeError);
+  });
+
+  it('blames the factory, not deterministicObjectHash, for hashing errors', () => {
+    // A caller who only ever used the factory must never be pointed at a
+    // function they never called.
+    const hash = createDeterministicObjectHash({ hexLength: HexLength.Hex16 });
+
+    expect(() => hash()).toThrow(/^createDeterministicObjectHash: /);
+    expect(() => hash({ a: 1 }, { a: 1 })).toThrow(/^createDeterministicObjectHash: /);
+    expect(() => hash({ a: NaN })).toThrow(/^createDeterministicObjectHash: /);
+    expect(() => hash({ a: Infinity })).toThrow(/^createDeterministicObjectHash: /);
+    expect(() => hash({ a: { b: 1 } } as never)).toThrow(/^createDeterministicObjectHash: /);
+    expect(() => hash('nope' as never)).toThrow(/^createDeterministicObjectHash: /);
   });
 
   it('throws at configure time rather than on the first hash', () => {
