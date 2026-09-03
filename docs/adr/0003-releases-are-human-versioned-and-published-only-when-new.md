@@ -36,6 +36,8 @@ So the registry itself settles it. When the lookup reports the version absent, t
 
 Forgetting to bump the version is not an error. The merge publishes nothing and the run is green, so a release can be missed silently — the cost of making documentation merges quiet. The tag list is the reliable record of what shipped.
 
+Publishes are serialised, and that serialisation drops work. Only one run may be queued behind the one in flight, so when several merges land in quick succession the intermediate ones are cancelled while pending and their versions are never published — the same silent miss as forgetting to bump, arriving by a different route. Merging a release and then immediately merging another is the way to hit it.
+
 A version can never be republished. Once `0.1.0` is in the registry, re-running `main` at that version is always a no-op, so correcting a bad release means bumping to a new version rather than replacing the old one.
 
 Every tag in this repository was created by CI after a successful publish, so `v<version>` existing is a truthful claim that the version is installable. Nothing else in the repository may create release tags without breaking that.

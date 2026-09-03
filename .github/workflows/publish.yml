@@ -8,9 +8,14 @@ on:
 permissions:
   contents: read
 
-# Never cancel a publish, and never let two of them interleave: the "a tag means
-# this version is in the registry" invariant depends on publish-then-tag running
-# to completion.
+# Publish runs never overlap: the "a tag means this version is in the registry"
+# invariant depends on publish-then-tag completing, and `cancel-in-progress:
+# false` keeps a run that has started from being cancelled by a later push.
+#
+# It does not mean every push gets a run. GitHub queues at most one pending run
+# per group, so of several pushes arriving while a run is in flight, only the
+# latest survives to run — the versions in between are never published. See
+# docs/adr/0003-releases-are-human-versioned-and-published-only-when-new.md.
 concurrency:
   group: publish
   cancel-in-progress: false
