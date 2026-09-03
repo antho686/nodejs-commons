@@ -54,7 +54,7 @@
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:mjs": "tsc -p tsconfig.mjs.json",
     "build:types": "tsc -p tsconfig.types.json",
-    "clean": "npm run clean:cjs && npm run clean:mjs && npm run clean:types && npm run clean:cov && npm run clean:mod",
+    "clean": "npm run clean:dist && npm run clean:cov && npm run clean:mod",
     "clean:dist": "rimraf dist",
     "clean:types": "rimraf dist/types",
     "clean:cjs": "rimraf dist/cjs",
