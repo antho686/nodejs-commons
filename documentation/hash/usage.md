@@ -136,6 +136,15 @@ createDeterministicObjectHash({ hexLength: 99 }); // throws TypeError immediatel
 
 That matters because hashers are normally built once and reused, often far from where they're eventually called.
 
+A hasher applies the same input rules as `deterministicObjectHash` — see [Rejected inputs](#rejected-inputs) — but names **itself** in the message, so an error always points at a function you actually called:
+
+```ts
+const shortHash = createDeterministicObjectHash({ hexLength: HexLength.Hex12 });
+
+shortHash();
+// TypeError: createDeterministicObjectHash: at least one object is required
+```
+
 Calling it with nothing gives you a default-length hasher, which is just a longer way of writing `deterministicObjectHash`:
 
 ```ts
@@ -236,15 +245,6 @@ This is the same "absent, `null`, and `undefined` are three distinct states" dis
 | Two or more structurally identical objects | `deterministicObjectHash({ a: 1 }, { a: 1 })` | See [Structurally identical input objects are rejected](#structurally-identical-input-objects-are-rejected-not-deduplicated) above. |
 
 An empty object (`{}`) is valid input — it hashes to a fixed, consistent value like any other flat object.
-
-A hasher built by `createDeterministicObjectHash` applies exactly the same rules, and names **itself** in the message rather than `deterministicObjectHash`, so an error always points at a function you actually called:
-
-```ts
-const shortHash = createDeterministicObjectHash({ hexLength: HexLength.Hex12 });
-
-shortHash();
-// TypeError: createDeterministicObjectHash: at least one object is required
-```
 
 ### Rejected options
 
