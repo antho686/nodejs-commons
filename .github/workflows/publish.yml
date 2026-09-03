@@ -83,24 +83,7 @@ jobs:
         if: steps.registry.outputs.should-publish == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -uo pipefail
-          publish_log="$(mktemp)"
-
-          set +e
-          npm publish 2>&1 | tee "$publish_log"
-          status=${PIPESTATUS[0]}
-          set -e
-
-          if [ "$status" -eq 0 ]; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-          elif grep -qiE 'EPUBLISHCONFLICT|cannot publish over|409 Conflict' "$publish_log"; then
-            echo "already published, skipping: the registry refused this version as already present."
-            echo "published=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "The publish failed for a reason other than the version already existing."
-            exit 1
-          fi
+        run: .github/scripts/publish-to-registry.sh
 
       # Only after a successful publish, so a tag always means "this version
       # exists in the registry".
