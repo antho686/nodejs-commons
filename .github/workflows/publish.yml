@@ -33,6 +33,13 @@ jobs:
       - name: Check out the merged commit
         uses: actions/checkout@v4
 
+      # `publishConfig.registry` is what `npm publish` obeys, so the workflow
+      # reads the registry and scope from the manifest rather than repeating
+      # them: one place to change, and no way for the two to disagree.
+      - name: Read the publish registry from the manifest
+        id: manifest
+        run: .github/scripts/read-publish-target.sh
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -40,8 +47,8 @@ jobs:
           # new LTS never changes what this workflow runs without a commit.
           node-version: '24'
           cache: npm
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@antho686'
+          registry-url: ${{ steps.manifest.outputs.registry }}
+          scope: ${{ steps.manifest.outputs.scope }}
 
       - name: Install dependencies from the lockfile
         run: npm ci
