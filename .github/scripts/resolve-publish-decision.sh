@@ -10,11 +10,28 @@
 # all — an authentication or network failure must never be mistaken for a
 # routine skip. Expects NODE_AUTH_TOKEN to be set for the registry lookup.
 
-set -uo pipefail
+set -euo pipefail
 
 error_log="$(mktemp)"
-name=$(node -p "require('./package.json').name")
-version=$(node -p "require('./package.json').version")
+
+# The name and version decide what is looked up and what gets tagged, so a
+# manifest that does not state them plainly is rejected rather than turned into
+# an empty string that would look up "@" and tag "v".
+name=$(node -p "
+  const { name } = require('./package.json');
+  if (typeof name !== 'string' || name === '') {
+    throw new TypeError('package.json must set name to the package to publish.');
+  }
+  name;
+")
+version=$(node -p "
+  const { version } = require('./package.json');
+  if (typeof version !== 'string' || version === '') {
+    throw new TypeError('package.json must set version to the version to publish.');
+  }
+  version;
+")
+
 echo "version=$version" >> "$GITHUB_OUTPUT"
 echo "Looking up $name@$version in GitHub Packages."
 
