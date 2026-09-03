@@ -32,7 +32,15 @@ export type DeterministicObjectHashOptions = {
 
 export type DeterministicObjectHasher = (...objects: FlatJsonObject[]) => string;
 
-const OPTION_KEYS: readonly string[] = ['hexLength'];
+/**
+ * Every recognised option name. Derived from a record keyed by
+ * `DeterministicObjectHashOptions` so that adding an option to the type without
+ * listing it here is a compile error rather than an option silently rejected at
+ * runtime as unknown.
+ */
+const OPTION_KEYS: readonly string[] = Object.keys({
+  hexLength: true,
+} satisfies Record<keyof DeterministicObjectHashOptions, true>);
 
 /**
  * Both public entry points share one hashing implementation, so every error it
