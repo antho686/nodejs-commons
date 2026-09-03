@@ -29,43 +29,64 @@ fail_lookup() {
   exit 1
 }
 
-if [ "$status" -ne 0 ] && ! grep -qE 'E404|404 Not Found' "$error_log"; then
-  # Not an answer about the version — authentication, network, a server error.
-  fail_lookup "$(cat "$error_log")"
-fi
-
-# `npm view <name>@<version> version --json` prints a JSON string for a version
-# that exists, nothing at all for one that does not, and a JSON array when the
-# registry matches more than one. Anything else is not a version, and treating
-# it as one would silently skip a real release.
-set +e
-resolved=$(node -e '
+# `npm view <name>@<version> version --json` reports an absent version by
+# exiting non-zero and printing an E404 *error object on stdout* — not by
+# printing nothing. A version that exists comes back as a JSON array of version
+# strings (or a bare string). Anything else is not an answer about the version,
+# and treating it as one would either skip a real release or block every one.
+verdict=$(node -e '
   const text = String(process.argv[1] ?? "").trim();
-  if (text === "") process.exit(0);
+  if (text === "" || text === "null") {
+    // Says nothing on its own: only meaningful alongside the exit status.
+    process.stdout.write("silent");
+    process.exit(0);
+  }
+
   let value;
   try {
     value = JSON.parse(text);
   } catch {
-    process.exit(2);
+    process.stdout.write("unknown");
+    process.exit(0);
   }
-  if (value === null) process.exit(0);
+
+  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    const code = value.error && value.error.code;
+    process.stdout.write(code === "E404" ? "absent" : "unknown");
+    process.exit(0);
+  }
+
   const versions = (Array.isArray(value) ? value : [value]).filter(
     (entry) => typeof entry === "string" && entry.trim() !== "",
   );
-  if (versions.length === 0) process.exit(2);
-  process.stdout.write(versions[versions.length - 1]);
+  process.stdout.write(versions.length > 0 ? `present ${versions[versions.length - 1]}` : "unknown");
 ' "$lookup")
-parse_status=$?
-set -e
 
-if [ "$parse_status" -ne 0 ]; then
-  fail_lookup "Unrecognised output from npm view: $lookup"
+# Empty output means "the version is absent" only when the lookup itself
+# succeeded. Empty output from a failed lookup is silence, not an answer.
+if [ "$verdict" = "silent" ]; then
+  if [ "$status" -eq 0 ]; then
+    verdict="absent"
+  else
+    verdict="unknown"
+  fi
 fi
 
-if [ -n "$resolved" ]; then
-  echo "already published, skipping: $name@$resolved is already in the registry."
-  echo "should-publish=false" >> "$GITHUB_OUTPUT"
-else
-  echo "$name@$version is not in the registry; it will be published."
-  echo "should-publish=true" >> "$GITHUB_OUTPUT"
+# stdout did not settle it; a 404 on stderr still means absent.
+if [ "$verdict" = "unknown" ] && grep -qE 'E404|404 Not Found' "$error_log"; then
+  verdict="absent"
 fi
+
+case "$verdict" in
+  present\ *)
+    echo "already published, skipping: $name@${verdict#present } is already in the registry."
+    echo "should-publish=false" >> "$GITHUB_OUTPUT"
+    ;;
+  absent)
+    echo "$name@$version is not in the registry; it will be published."
+    echo "should-publish=true" >> "$GITHUB_OUTPUT"
+    ;;
+  *)
+    fail_lookup "$(printf 'stdout: %s\nstderr: %s' "$lookup" "$(cat "$error_log")")"
+    ;;
+esac
