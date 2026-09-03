@@ -66,7 +66,7 @@ const HexLength: Readonly<{
 }>;
 ```
 
-Named anchors for the hash lengths you're most likely to want. **The unit is hex characters of the returned string** — not bytes, not bits. `Min` is the shortest permitted length, `Default` is what `deterministicObjectHash` produces, and `Max` is the full SHA-256 digest length.
+Named anchors for the hash lengths you're most likely to want. **The unit is hex characters of the returned string** — not bytes, not bits. `Min` is the shortest permitted length, `Default` is what `deterministicObjectHash` produces, and `Max` is the full SHA-256 hex digest, 64 hex characters.
 
 These are a convenience, not a constraint: any integer between `Min` and `Max` is valid, so reach for a literal when you genuinely need a length the anchors don't cover.
 

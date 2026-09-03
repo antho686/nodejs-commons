@@ -17,7 +17,7 @@ export const HexLength = Object.freeze({
   /** The hash length produced by `deterministicObjectHash`: 32 hex characters. */
   Default: 32,
   Hex48: 48,
-  /** The full SHA-256 digest length: 64 hex characters. */
+  /** The full SHA-256 hex digest: 64 hex characters. */
   Max: 64,
 } as const);
 
