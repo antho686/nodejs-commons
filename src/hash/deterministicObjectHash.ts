@@ -96,6 +96,19 @@ function canonicalizeObject(input: unknown, argIndex: number): string {
 }
 
 /**
+ * Describes a rejected `hexLength` for an error message. A number is shown by
+ * value, since the value is what failed (`65`, `20.5`). Anything else is shown
+ * by type, because printing the value would be misleading: the string `'32'`
+ * would otherwise render as `32`, a length that is perfectly legal as a number.
+ */
+function describeRejectedHexLength(value: unknown): string {
+  if (typeof value === 'number') {
+    return String(value);
+  }
+  return value === null ? 'null' : typeof value;
+}
+
+/**
  * Validates the options bag and resolves the hash length in a single pass, so
  * the default lives in exactly one place. Deliberately does not reuse
  * `isPlainObject`: the options contract differs from the flat-object contract
@@ -137,7 +150,7 @@ function resolveHexLength(options?: DeterministicObjectHashOptions): number {
     hexLength > HexLength.Max
   ) {
     throw new TypeError(
-      `createDeterministicObjectHash: hexLength must be an integer between ${HexLength.Min} and ${HexLength.Max}, received ${String(hexLength)}`,
+      `createDeterministicObjectHash: hexLength must be an integer between ${HexLength.Min} and ${HexLength.Max}, received ${describeRejectedHexLength(hexLength)}`,
     );
   }
 

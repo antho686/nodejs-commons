@@ -174,6 +174,29 @@ describe('createDeterministicObjectHash', () => {
     expect(() => createDeterministicObjectHash({ hexLength: Infinity })).toThrow(TypeError);
   });
 
+  it('reports the type, not the value, when hexLength is the wrong type', () => {
+    // `'32'` printed by value would read as `32` — a length that is legal as a
+    // number — so the message would show a value that looks valid.
+    expect(() => createDeterministicObjectHash({ hexLength: '32' as never })).toThrow(
+      /received string$/,
+    );
+    expect(() => createDeterministicObjectHash({ hexLength: null as never })).toThrow(
+      /received null$/,
+    );
+    expect(() => createDeterministicObjectHash({ hexLength: undefined })).toThrow(
+      /received undefined$/,
+    );
+    expect(() => createDeterministicObjectHash({ hexLength: true as never })).toThrow(
+      /received boolean$/,
+    );
+  });
+
+  it('reports the value when hexLength is a number of the wrong size', () => {
+    expect(() => createDeterministicObjectHash({ hexLength: 65 })).toThrow(/received 65$/);
+    expect(() => createDeterministicObjectHash({ hexLength: 20.5 })).toThrow(/received 20.5$/);
+    expect(() => createDeterministicObjectHash({ hexLength: NaN })).toThrow(/received NaN$/);
+  });
+
   it('throws when hexLength is outside 1..64 or not an integer', () => {
     expect(() => createDeterministicObjectHash({ hexLength: 0 })).toThrow(TypeError);
     expect(() => createDeterministicObjectHash({ hexLength: -1 })).toThrow(TypeError);
