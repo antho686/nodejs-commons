@@ -28,7 +28,9 @@ Publishing unconditionally on every push to `main` would fail every documentatio
 
 This makes the distinction between *"the registry gave a definite answer"* and *"the registry could not be reached"* load-bearing. A definite answer — the version is there, or it is provably absent — lets the run continue; an authentication or network failure fails it. Collapsing the two would turn a broken token into a silent no-release, which is the worst failure mode available: green runs, no package.
 
-GitHub Packages complicates this, because it masks a package the caller may not read as a `404` rather than a `403`. An unusable token therefore looks identical to "never published". The run defends against that by proving the credentials work — an authenticated `npm whoami` against the registry — before it interprets any `404` as absence.
+GitHub Packages complicates this, because it masks a package the caller may not read as a `404` rather than a `403`. An unusable token therefore looks identical to "never published", and no read-only probe can tell the two apart: proving the token is valid does not prove it may read *this* package.
+
+So the registry itself settles it. When the lookup reports the version absent, the run attempts the publish, and reads the outcome as the authoritative answer: success means it really was absent, a conflict means it was already there — the routine skip, logged and green — and anything else fails the run. A token that cannot read the package also cannot publish to it, so the masked `404` surfaces as a failed publish rather than as a false release.
 
 ## Consequences
 
