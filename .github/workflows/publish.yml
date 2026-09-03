@@ -96,9 +96,4 @@ jobs:
         if: steps.publish.outputs.published == 'true'
         env:
           VERSION: ${{ steps.registry.outputs.version }}
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -a "v$VERSION" -m "Release v$VERSION" "$GITHUB_SHA"
-          git push origin "v$VERSION"
+        run: .github/scripts/tag-published-commit.sh
