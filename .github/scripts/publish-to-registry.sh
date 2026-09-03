@@ -23,9 +23,21 @@ npm publish 2>&1 | tee "$publish_log"
 status=${PIPESTATUS[0]}
 set -e
 
+# The registry refusing a version it already holds reports as one of:
+#
+#   npm error code E409              GitHub Packages — HTTP status becomes E<status>
+#   npm error code EPUBLISHCONFLICT  npm's own "Cannot publish over existing version."
+#   ...cannot publish over the previously published versions: <version>
+#                                    the public registry, which pairs it with E403
+#
+# A bare E403 is deliberately not a conflict: on its own that is an ordinary
+# permission failure, and reading it as "already published" would turn a broken
+# token into a green run that released nothing.
+conflict='code (E409|EPUBLISHCONFLICT)|annot publish over'
+
 if [ "$status" -eq 0 ]; then
   echo "published=true" >> "$GITHUB_OUTPUT"
-elif grep -qiE 'EPUBLISHCONFLICT|cannot publish over|409 Conflict' "$publish_log"; then
+elif grep -qE "$conflict" "$publish_log"; then
   echo "already published, skipping: the registry refused this version as already present."
   echo "published=false" >> "$GITHUB_OUTPUT"
 else
