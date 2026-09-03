@@ -28,7 +28,7 @@
   "license": "MIT",
   "author": "antho686",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -53,9 +53,8 @@
     "build": "npm run build:cjs && npm run build:mjs && npm run build:types",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "build:mjs": "tsc -p tsconfig.mjs.json",
-    "build:mjs-why": "tsc -p tsconfig.mjs.json && node -e \"require('fs').writeFileSync('dist/esm/package.json', JSON.stringify({ type: 'module' }))\"",
     "build:types": "tsc -p tsconfig.types.json",
-    "clean": "npm run clean:cjs && npm run clean:mjs && npm run clean:types && npm run clean:cov && npm run clean:mod",
+    "clean": "npm run clean:dist && npm run clean:cov && npm run clean:mod",
     "clean:dist": "rimraf dist",
     "clean:types": "rimraf dist/types",
     "clean:cjs": "rimraf dist/cjs",
