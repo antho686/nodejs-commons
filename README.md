@@ -11,3 +11,5 @@ Placeholder shape — fields are guesses based on the flow description above, no
 
 Compiled to CommonJS, ES modules, and types, so consumers can import as needed.
 
+## Modules
+[Modules](documentation/README.md)
