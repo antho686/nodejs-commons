@@ -15,14 +15,23 @@ import { dirname, join, resolve } from 'node:path';
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const manifest = JSON.parse(readFileSync(join(repositoryRoot, 'package.json'), 'utf8'));
 
-/** Every path the manifest promises, each labelled with where it was promised. */
+/**
+ * Every path the manifest promises, each labelled with where it was promised.
+ *
+ * A manifest that does not promise what this package is documented to promise
+ * is itself the failure: silently returning fewer paths would let the check
+ * pass green having verified nothing.
+ */
 function promisedPaths(pkg) {
   const promises = [];
 
   for (const field of ['main', 'module', 'types']) {
-    if (typeof pkg[field] === 'string') {
-      promises.push({ source: field, path: pkg[field] });
+    if (typeof pkg[field] !== 'string') {
+      throw new TypeError(
+        `package.json "${field}" must be a string naming an entry point, got ${typeof pkg[field]}.`,
+      );
     }
+    promises.push({ source: field, path: pkg[field] });
   }
 
   const walkExports = (node, trail) => {
@@ -30,10 +39,15 @@ function promisedPaths(pkg) {
       promises.push({ source: `exports${trail}`, path: node });
       return;
     }
-    if (node && typeof node === 'object') {
-      for (const [condition, child] of Object.entries(node)) {
-        walkExports(child, `${trail}[${condition}]`);
-      }
+    if (node === null || typeof node !== 'object' || Array.isArray(node)) {
+      throw new TypeError(
+        `package.json "exports${trail}" must be a string or an object of conditions, got ${
+          Array.isArray(node) ? 'array' : node === null ? 'null' : typeof node
+        }.`,
+      );
+    }
+    for (const [condition, child] of Object.entries(node)) {
+      walkExports(child, `${trail}[${condition}]`);
     }
   };
   walkExports(pkg.exports, '');
@@ -41,8 +55,13 @@ function promisedPaths(pkg) {
   return promises;
 }
 
+const promised = promisedPaths(manifest);
+if (promised.length === 0) {
+  throw new TypeError('package.json promises no entry points at all; there is nothing to verify.');
+}
+
 const missing = [];
-for (const { source, path } of promisedPaths(manifest)) {
+for (const { source, path } of promised) {
   const absolute = join(repositoryRoot, path);
   let isFile = false;
   try {
@@ -70,4 +89,4 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-console.log('\nEvery promised entry point is present in the build output.');
+console.log(`\nAll ${promised.length} promised entry points are present in the build output.`);
