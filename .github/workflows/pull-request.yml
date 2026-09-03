@@ -32,6 +32,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
 
+      - name: Verify Node.js version
+        run: node -v
+
       - name: Install dependencies from the lockfile
         run: npm ci
 
